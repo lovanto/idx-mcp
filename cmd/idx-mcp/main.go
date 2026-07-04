@@ -178,6 +178,14 @@ type financialInput struct {
 	Period string `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
 }
 
+// ---- Tool: get_financial_growth ----
+
+type growthInput struct {
+	Code   string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+	Year   string `json:"year" jsonschema:"report year, e.g. 2026"`
+	Period string `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
+}
+
 // ---- Tool: get_foreign_flow_trend ----
 
 type flowTrendInput struct {
@@ -328,6 +336,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.FinancialReport{}, nil
 		}
 		return nil, *rep, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_financial_growth",
+		Description: "Year-over-year growth analysis from an IDX-listed company's XBRL filing: revenue and profit vs the same period a year earlier, balance sheet vs the prior year-end, growth percentages, and net margin trend. Uses the comparatives embedded in a single filing.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in growthInput) (*mcp.CallToolResult, idx.FinancialGrowth, error) {
+		g, err := client.FinancialGrowth(ctx, in.Code, in.Year, in.Period)
+		if err != nil {
+			return toolError(err), idx.FinancialGrowth{}, nil
+		}
+		return nil, *g, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
