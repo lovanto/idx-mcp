@@ -91,6 +91,17 @@ type dividendOutput struct {
 	Note      string         `json:"note"`
 }
 
+// ---- Tool: get_shareholders ----
+
+type shareholderInput struct {
+	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+}
+
+type shareholderOutput struct {
+	Code         string            `json:"code"`
+	Shareholders []idx.Shareholder `json:"shareholders"`
+}
+
 // ---- Tool: get_financial_report ----
 
 type financialInput struct {
@@ -135,6 +146,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			Dividends: divs,
 			Note:      "Reflects the most recently declared dividend(s) from IDX company data, not full historical series.",
 		}, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_shareholders",
+		Description: "Ownership structure of an IDX-listed company: each holder's name, category, share count, percentage, and whether they are the controlling shareholder, largest first.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in shareholderInput) (*mcp.CallToolResult, shareholderOutput, error) {
+		sh, err := client.Shareholders(ctx, in.Code)
+		if err != nil {
+			return toolError(err), shareholderOutput{}, nil
+		}
+		return nil, shareholderOutput{Code: in.Code, Shareholders: sh}, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{

@@ -34,6 +34,10 @@ const tradingJSON = `{"KodeEmiten":"BBCA","replies":[
 
 const profileJSON = `{"Profiles":[
  {"KodeEmiten":"BBCA","NamaEmiten":"PT Bank Central Asia Tbk.","Alamat":"Menara BCA","Sektor":"Financials","SubSektor":"Banks","Industri":"Banks","SubIndustri":"Banks","PapanPencatatan":"Main","TanggalPencatatan":"2000-05-31T00:00:00","Website":"www.bca.co.id","Email":"ir@bca.co.id","Telepon":"021-23588000","KegiatanUsahaUtama":"Banking"}
+],"PemegangSaham":[
+ {"Nama":"PT Dwimuria Investama Andalan","Kategori":"More than 5%","Jumlah":67729950000,"Persentase":54.942,"Pengendali":true},
+ {"Nama":"Masyarakat Non Warkat","Kategori":"Masyarakat Non Warkat","Jumlah":51940899478,"Persentase":42.134,"Pengendali":false},
+ {"Nama":"Saham Treasury","Kategori":"Treasury Stock","Jumlah":432416000,"Persentase":0.351,"Pengendali":false}
 ],"Dividen":[
  {"Jenis":"dti","TahunBuku":"2026","CashDividenPerSaham":20,"CashDividenPerSahamMU":"IDR","CashDividenTotal":0,"TotalSahamBonus":0,"Rasio1":0,"Rasio2":0,"TanggalCum":"2026-06-15T00:00:00","TanggalExRegulerDanNegosiasi":"2026-06-17T00:00:00","TanggalDPS":"2026-06-18T16:00:00","TanggalPembayaran":"2026-06-26T00:00:00"}
 ]}`
@@ -105,6 +109,29 @@ func TestDividends(t *testing.T) {
 	// Rasio1/Rasio2 are both 0 in the fixture, so Ratio stays empty.
 	if d.Ratio != "" {
 		t.Errorf("Ratio = %q, want empty for a pure cash dividend", d.Ratio)
+	}
+}
+
+func TestShareholders(t *testing.T) {
+	f := &fakeFetcher{responses: map[string]string{"GetCompanyProfilesDetail": profileJSON}}
+	c := New(f, nil)
+
+	sh, err := c.Shareholders(context.Background(), "BBCA")
+	if err != nil {
+		t.Fatalf("Shareholders: %v", err)
+	}
+	if len(sh) != 3 {
+		t.Fatalf("got %d shareholders, want 3", len(sh))
+	}
+	// Sorted by percentage desc: Dwimuria (54.9) first.
+	if sh[0].Name != "PT Dwimuria Investama Andalan" || !sh[0].Controller {
+		t.Errorf("top holder = %+v, want Dwimuria as controller", sh[0])
+	}
+	if sh[0].Percentage < sh[1].Percentage || sh[1].Percentage < sh[2].Percentage {
+		t.Errorf("not sorted desc by percentage: %v", []float64{sh[0].Percentage, sh[1].Percentage, sh[2].Percentage})
+	}
+	if sh[2].Category != "Treasury Stock" {
+		t.Errorf("last = %+v, want Treasury Stock", sh[2])
 	}
 }
 

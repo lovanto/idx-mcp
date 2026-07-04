@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -27,6 +28,17 @@ type CompanyProfile struct {
 	Phone        string     `json:"phone"`
 	MainBusiness string     `json:"main_business"`
 	Dividends    []Dividend `json:"dividends"`
+}
+
+// Shareholder is one ownership entry from the profile's PemegangSaham array.
+// Categories include "More than 5%", "Treasury Stock", and public buckets
+// (Masyarakat Warkat / Non Warkat). Controller marks the controlling holder.
+type Shareholder struct {
+	Name       string  `json:"name"`
+	Category   string  `json:"category"`
+	Shares     float64 `json:"shares"`
+	Percentage float64 `json:"percentage"`
+	Controller bool    `json:"controller"`
 }
 
 // Dividend is one corporate-action dividend entry. Source is the profile
@@ -77,6 +89,13 @@ type rawProfileResponse struct {
 		TanggalDPS                   string  `json:"TanggalDPS"`
 		TanggalPembayaran            string  `json:"TanggalPembayaran"`
 	} `json:"Dividen"`
+	PemegangSaham []struct {
+		Nama       string  `json:"Nama"`
+		Kategori   string  `json:"Kategori"`
+		Jumlah     float64 `json:"Jumlah"`
+		Persentase float64 `json:"Persentase"`
+		Pengendali bool    `json:"Pengendali"`
+	} `json:"PemegangSaham"`
 }
 
 // fetchProfileRaw retrieves and decodes GetCompanyProfilesDetail, shared by the
@@ -138,6 +157,31 @@ func (c *Client) Dividends(ctx context.Context, code string) ([]Dividend, error)
 		return nil, fmt.Errorf("no profile found for %q", normalizeCode(code))
 	}
 	return dividendsFromRaw(raw), nil
+}
+
+// Shareholders returns the ownership breakdown for an emiten code, sorted by
+// percentage held (largest first). Backed by the profile payload.
+func (c *Client) Shareholders(ctx context.Context, code string) ([]Shareholder, error) {
+	raw, err := c.fetchProfileRaw(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+	if len(raw.Profiles) == 0 {
+		return nil, fmt.Errorf("no profile found for %q", normalizeCode(code))
+	}
+
+	out := make([]Shareholder, 0, len(raw.PemegangSaham))
+	for _, s := range raw.PemegangSaham {
+		out = append(out, Shareholder{
+			Name:       strings.TrimSpace(s.Nama),
+			Category:   s.Kategori,
+			Shares:     s.Jumlah,
+			Percentage: s.Persentase,
+			Controller: s.Pengendali,
+		})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Percentage > out[j].Percentage })
+	return out, nil
 }
 
 // dividendsFromRaw maps the raw Dividen array into cleaned Dividend values.
