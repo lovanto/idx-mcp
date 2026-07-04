@@ -102,6 +102,23 @@ type shareholderOutput struct {
 	Shareholders []idx.Shareholder `json:"shareholders"`
 }
 
+// ---- Tool: get_subsidiaries ----
+
+type subsidiaryInput struct {
+	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+}
+
+type subsidiaryOutput struct {
+	Code         string           `json:"code"`
+	Subsidiaries []idx.Subsidiary `json:"subsidiaries"`
+}
+
+// ---- Tool: get_management ----
+
+type managementInput struct {
+	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+}
+
 // ---- Tool: get_financial_report ----
 
 type financialInput struct {
@@ -157,6 +174,28 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), shareholderOutput{}, nil
 		}
 		return nil, shareholderOutput{Code: in.Code, Shareholders: sh}, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_subsidiaries",
+		Description: "Consolidated subsidiaries of an IDX-listed company: name, line of business, location, ownership percentage, total assets, and operation status, largest ownership first.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in subsidiaryInput) (*mcp.CallToolResult, subsidiaryOutput, error) {
+		subs, err := client.Subsidiaries(ctx, in.Code)
+		if err != nil {
+			return toolError(err), subsidiaryOutput{}, nil
+		}
+		return nil, subsidiaryOutput{Code: in.Code, Subsidiaries: subs}, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_management",
+		Description: "Board of an IDX-listed company: directors (with affiliation flag) and commissioners (with independence flag), plus their positions.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in managementInput) (*mcp.CallToolResult, idx.Management, error) {
+		m, err := client.Management(ctx, in.Code)
+		if err != nil {
+			return toolError(err), idx.Management{}, nil
+		}
+		return nil, *m, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{

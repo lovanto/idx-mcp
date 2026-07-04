@@ -38,6 +38,14 @@ const profileJSON = `{"Profiles":[
  {"Nama":"PT Dwimuria Investama Andalan","Kategori":"More than 5%","Jumlah":67729950000,"Persentase":54.942,"Pengendali":true},
  {"Nama":"Masyarakat Non Warkat","Kategori":"Masyarakat Non Warkat","Jumlah":51940899478,"Persentase":42.134,"Pengendali":false},
  {"Nama":"Saham Treasury","Kategori":"Treasury Stock","Jumlah":432416000,"Persentase":0.351,"Pengendali":false}
+],"Direktur":[
+ {"Nama":"Gregory Hendra Lembong","Jabatan":"PRESIDENT DIRECTOR","Afiliasi":false}
+],"Komisaris":[
+ {"Nama":"Sumantri Slamet","Jabatan":"COMMISSIONER","Independen":true},
+ {"Nama":"Jahja Setiaatmadja","Jabatan":"PRESIDENT COMMISIONER","Independen":false}
+],"AnakPerusahaan":[
+ {"Nama":"PT Asuransi Umum BCA","BidangUsaha":"Asuransi umum atau\r\nkerugian","Lokasi":"Jakarta","Persentase":100,"JumlahAset":3454384,"MataUang":"IDR","Satuan":"JUTAAN","StatusOperasi":"Beroperasi","TahunKomersil":"1989"},
+ {"Nama":"PT Asuransi Jiwa BCA","BidangUsaha":"Asuransi Jiwa","Lokasi":"Jakarta","Persentase":90,"JumlahAset":4676146,"MataUang":"IDR","Satuan":"JUTAAN","StatusOperasi":"Beroperasi","TahunKomersil":"2014"}
 ],"Dividen":[
  {"Jenis":"dti","TahunBuku":"2026","CashDividenPerSaham":20,"CashDividenPerSahamMU":"IDR","CashDividenTotal":0,"TotalSahamBonus":0,"Rasio1":0,"Rasio2":0,"TanggalCum":"2026-06-15T00:00:00","TanggalExRegulerDanNegosiasi":"2026-06-17T00:00:00","TanggalDPS":"2026-06-18T16:00:00","TanggalPembayaran":"2026-06-26T00:00:00"}
 ]}`
@@ -132,6 +140,50 @@ func TestShareholders(t *testing.T) {
 	}
 	if sh[2].Category != "Treasury Stock" {
 		t.Errorf("last = %+v, want Treasury Stock", sh[2])
+	}
+}
+
+func TestSubsidiaries(t *testing.T) {
+	f := &fakeFetcher{responses: map[string]string{"GetCompanyProfilesDetail": profileJSON}}
+	c := New(f, nil)
+
+	subs, err := c.Subsidiaries(context.Background(), "BBCA")
+	if err != nil {
+		t.Fatalf("Subsidiaries: %v", err)
+	}
+	if len(subs) != 2 {
+		t.Fatalf("got %d subsidiaries, want 2", len(subs))
+	}
+	// Sorted by ownership desc: 100% before 90%.
+	if subs[0].OwnershipPct != 100 || subs[1].OwnershipPct != 90 {
+		t.Errorf("not sorted by ownership: %v", []float64{subs[0].OwnershipPct, subs[1].OwnershipPct})
+	}
+	// Embedded CRLF in line-of-business must be collapsed.
+	if subs[0].LineOfBusiness != "Asuransi umum atau kerugian" {
+		t.Errorf("LineOfBusiness = %q, want CRLF collapsed", subs[0].LineOfBusiness)
+	}
+	if subs[0].AssetUnit != "JUTAAN" || subs[0].TotalAssets != 3454384 {
+		t.Errorf("asset fields = %+v", subs[0])
+	}
+}
+
+func TestManagement(t *testing.T) {
+	f := &fakeFetcher{responses: map[string]string{"GetCompanyProfilesDetail": profileJSON}}
+	c := New(f, nil)
+
+	m, err := c.Management(context.Background(), "BBCA")
+	if err != nil {
+		t.Fatalf("Management: %v", err)
+	}
+	if len(m.Directors) != 1 || len(m.Commissioners) != 2 {
+		t.Fatalf("got %d directors / %d commissioners, want 1 / 2", len(m.Directors), len(m.Commissioners))
+	}
+	if m.Directors[0].Position != "PRESIDENT DIRECTOR" {
+		t.Errorf("director = %+v", m.Directors[0])
+	}
+	// Sumantri is the independent commissioner in the fixture.
+	if !m.Commissioners[0].Independent || m.Commissioners[1].Independent {
+		t.Errorf("independence flags wrong: %+v", m.Commissioners)
 	}
 }
 
