@@ -178,6 +178,14 @@ type financialInput struct {
 	Period string `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
 }
 
+// ---- Tool: get_valuation_ratios ----
+
+type valuationInput struct {
+	Code   string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+	Year   string `json:"year" jsonschema:"financial report year to value against, e.g. 2026"`
+	Period string `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
+}
+
 func registerTools(s *mcp.Server, client *idx.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_trading_info",
@@ -313,6 +321,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.FinancialReport{}, nil
 		}
 		return nil, *rep, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_valuation_ratios",
+		Description: "Valuation ratios for an IDX-listed company: market cap, PER, PBV, book value per share, and annualized EPS — computed from the latest official close, listed shares, and the XBRL filing for the given year/period.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in valuationInput) (*mcp.CallToolResult, idx.ValuationRatios, error) {
+		v, err := client.ValuationRatios(ctx, in.Code, in.Year, in.Period)
+		if err != nil {
+			return toolError(err), idx.ValuationRatios{}, nil
+		}
+		return nil, *v, nil
 	})
 }
 

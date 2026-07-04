@@ -31,6 +31,7 @@ SQLite cache.
 | `get_broker_summary` | _(none)_ | Per-broker trading activity for the latest day (all ~88 brokers): firm code, name, volume, value, frequency; sorted by traded value |
 | `list_companies` | `query` (optional, matches code/name), `sector` (optional) | IDX listed-company directory (~957) for ticker discovery: code, name, listing board/date, sector, industry. Capped at 100 results (`truncated` flag when more matched) |
 | `get_financial_report` | `code`, `year` (e.g. `2026`), `period` (`tw1`/`tw2`/`tw3`/`audit`, default `tw1`) | Key accounts (assets, liabilities, equity, revenue, profit, …) parsed from the official XBRL filing |
+| `get_valuation_ratios` | `code`, `year`, `period` (`tw1`/`tw2`/`tw3`/`audit`, default `tw1`) | Market cap, PER, PBV, book value per share, and annualized EPS — computed from the latest official close, listed shares, and the XBRL filing for that period |
 
 Concept coverage is validated across sectors (bank, infrastructure, general conglomerate). Non-
 financial issuers report `SalesAndRevenue`; banks report `InterestIncome`. Earnings-per-share is a

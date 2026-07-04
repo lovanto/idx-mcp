@@ -29,7 +29,7 @@ type notFoundError struct{}
 func (*notFoundError) Error() string { return "no canned response" }
 
 const tradingJSON = `{"KodeEmiten":"BBCA","replies":[
- {"Date":"2026-06-29T00:00:00","StockCode":"BBCA","OpenPrice":6175,"High":6200,"Low":5925,"Close":5925,"Change":-250,"Volume":189886600,"ForeignBuy":93315300,"ForeignSell":163734800}
+ {"Date":"2026-06-29T00:00:00","StockCode":"BBCA","StockName":"Bank Central Asia Tbk.","OpenPrice":6175,"High":6200,"Low":5925,"Close":5925,"Change":-250,"Volume":189886600,"ListedShares":122042299500,"ForeignBuy":93315300,"ForeignSell":163734800}
 ]}`
 
 const profileJSON = `{"Profiles":[
@@ -71,6 +71,9 @@ func TestTradingInfo(t *testing.T) {
 	// Foreign net = buy - sell = 93,315,300 - 163,734,800 = -70,419,500
 	if d.ForeignNet != -70419500 {
 		t.Errorf("ForeignNet = %v, want -70419500", d.ForeignNet)
+	}
+	if d.ListedShares != 122042299500 || d.StockName != "Bank Central Asia Tbk." {
+		t.Errorf("ListedShares/StockName = %v/%q", d.ListedShares, d.StockName)
 	}
 }
 
