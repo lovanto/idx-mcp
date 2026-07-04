@@ -1,0 +1,55 @@
+# goreleaser config (schema v2). Runs in CI on tag push; see .github/workflows/release.yml.
+# Produces the same artifacts as the manual v0.1.0 release:
+#   idx-mcp_<tag>_<os>_<arch>.{tar.gz,zip} + a _checksums.txt.
+version: 2
+
+project_name: idx-mcp
+
+builds:
+  - id: idx-mcp
+    main: ./cmd/idx-mcp
+    binary: idx-mcp
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "idx-mcp_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "idx-mcp_{{ .Tag }}_checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - 'Merge pull request'
+
+release:
+  draft: false
+  prerelease: auto

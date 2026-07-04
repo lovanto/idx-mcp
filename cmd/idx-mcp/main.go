@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -28,7 +29,23 @@ import (
 	"github.com/lovanto/idx-mcp/internal/idx"
 )
 
-const version = "0.1.0"
+// version is stamped at release time via -ldflags "-X main.version=...".
+// For `go install`, resolveVersion falls back to the module version.
+var version = "dev"
+
+// resolveVersion returns the ldflags-injected version, or the module version
+// recorded in the build info (as with `go install ...@v0.1.0`), or "dev".
+func resolveVersion() string {
+	if version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if v := info.Main.Version; v != "" && v != "(devel)" {
+			return v
+		}
+	}
+	return version
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -53,11 +70,12 @@ func run() error {
 		return fmt.Errorf("build fetcher: %w", err)
 	}
 
+	ver := resolveVersion()
 	client := idx.New(f, c)
-	server := mcp.NewServer(&mcp.Implementation{Name: "idx-mcp", Version: version}, nil)
+	server := mcp.NewServer(&mcp.Implementation{Name: "idx-mcp", Version: ver}, nil)
 	registerTools(server, client)
 
-	log.Printf("idx-mcp %s ready (cache=%s, min-interval=%s)", version, cachePath, minInterval())
+	log.Printf("idx-mcp %s ready (cache=%s, min-interval=%s)", ver, cachePath, minInterval())
 	return server.Run(context.Background(), &mcp.StdioTransport{})
 }
 
