@@ -79,6 +79,18 @@ type profileInput struct {
 	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
 }
 
+// ---- Tool: get_dividends ----
+
+type dividendInput struct {
+	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+}
+
+type dividendOutput struct {
+	Code      string         `json:"code"`
+	Dividends []idx.Dividend `json:"dividends"`
+	Note      string         `json:"note"`
+}
+
 // ---- Tool: get_financial_report ----
 
 type financialInput struct {
@@ -108,6 +120,21 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.CompanyProfile{}, nil
 		}
 		return nil, *p, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_dividends",
+		Description: "Most recently declared dividend(s) for an IDX-listed company: cash per share, key dates (cum/ex/record/payment), and bonus-share ratio if any.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in dividendInput) (*mcp.CallToolResult, dividendOutput, error) {
+		divs, err := client.Dividends(ctx, in.Code)
+		if err != nil {
+			return toolError(err), dividendOutput{}, nil
+		}
+		return nil, dividendOutput{
+			Code:      in.Code,
+			Dividends: divs,
+			Note:      "Reflects the most recently declared dividend(s) from IDX company data, not full historical series.",
+		}, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
