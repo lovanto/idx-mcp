@@ -28,19 +28,29 @@ const (
 )
 
 // KeyAccounts are the idx-cor concepts extracted for the financial-report tool.
-// Availability varies by industry (e.g. banks expose InterestIncome; general
-// corporates expose Revenue). Missing concepts are simply omitted from output.
+// Concept availability varies by industry; missing concepts are simply omitted.
+// Validated across three sectors (Phase 2): BBCA (bank), TLKM (infrastructure),
+// ASII (general/conglomerate).
 //
-// TODO(verify): confirm concept coverage across non-financial issuers
-// (e.g. TLKM, ASII) — only BBCA (a bank) was validated in Phase 1.
+//   - Balance-sheet lines (Assets, Liabilities, Equity, ...) and bottom-line
+//     P&L (ProfitLoss*, ComprehensiveIncome, ProfitLossBeforeIncomeTax) appear
+//     for every issuer.
+//   - Top line differs: non-financials report SalesAndRevenue; banks report
+//     InterestIncome. Both are listed so whichever exists is captured.
+//   - BasicEarningsLossPerShareFromContinuingOperations is a per-share ratio,
+//     NOT rupiah, and its scale is inconsistent across issuers (BBCA reports
+//     "119", TLKM reports "0.0000000439" for the same magnitude). Treat it as
+//     advisory; NumericIDR is left nil for non-integer values.
 var KeyAccounts = []string{
 	"Assets",
 	"Liabilities",
 	"Equity",
 	"EquityAttributableToEquityOwnersOfParentEntity",
-	"Revenue",
-	"GrossProfit",
+	"SalesAndRevenue",
 	"InterestIncome",
+	"CostOfSalesAndRevenue",
+	"GrossProfit",
+	"ProfitLossBeforeIncomeTax",
 	"ProfitLoss",
 	"ProfitLossAttributableToParentEntity",
 	"ComprehensiveIncome",
@@ -185,6 +195,9 @@ func build(contexts map[string]context, facts []fact) *Report {
 			continue
 		}
 		if _, isKey := order[fa.concept]; !isKey {
+			continue
+		}
+		if fa.value == "" { // nil / empty facts (e.g. a line the issuer doesn't report)
 			continue
 		}
 		acc := Account{

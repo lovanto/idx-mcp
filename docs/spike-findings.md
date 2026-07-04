@@ -84,10 +84,26 @@ memakai tooling pelaporan yang sama dari IDX.
 - **Mudah diekstrak**: akun headline neraca & laba rugi di atas — nama konsep stabil dan konteksnya baku.
 - **Perlu hati-hati**: `CashAndCashEquivalents` tidak muncul di BBCA (bank memakai konsep kas
   spesifik industri); banyak konsep hanya ada per tipe industri.
-- `// TODO(verify):` keseragaman antar sektor baru dicek untuk 1 emiten (BBCA, bank — statement code
-  4220000). Emiten non-keuangan (mis. TLKM, ASII) kemungkinan memakai `Revenue*`/`GrossProfit` alih-alih
-  `InterestIncome`, dan statement code berbeda. Perlu dicek 2–3 emiten lintas sektor di awal Phase 2
-  (sisa budget request spike sudah menipis).
+### Keseragaman antar sektor (divalidasi di Phase 2)
+
+Dicek 3 emiten beda sektor untuk periode TW1 2026: **BBCA** (bank), **TLKM** (infrastruktur),
+**ASII** (umum/konglomerat). Hasil:
+
+- **Universal (ada di semua)**: `Assets`, `Liabilities`, `Equity`,
+  `EquityAttributableToEquityOwnersOfParentEntity`, `ProfitLossBeforeIncomeTax`, `ProfitLoss`,
+  `ProfitLossAttributableToParentEntity`, `ComprehensiveIncome`.
+- **Top line beda per industri**: non-keuangan pakai **`SalesAndRevenue`** (TLKM 37,19 T; ASII 78,67 T) —
+  BUKAN `Revenue` (konsep itu tidak pernah muncul, sempat salah diasumsikan). Bank pakai `InterestIncome`.
+  Keduanya dimasukkan ke daftar konsep agar mana pun yang ada tertangkap.
+- **`CostOfSalesAndRevenue` / `GrossProfit`**: ada untuk ASII (COGS 63,17 T, gross profit 15,49 T),
+  tidak untuk TLKM (telco menyajikan beban berbeda) — konsep opsional, di-skip jika kosong.
+- **Risiko data quality EPS**: `BasicEarningsLossPerShareFromContinuingOperations` adalah rasio per-saham,
+  BUKAN rupiah, dan **skalanya tidak konsisten** antar emiten — BBCA melaporkan `119`, TLKM `0.0000000439`
+  untuk magnitudo yang sebetulnya ~43,9. Jangan bandingkan EPS antar emiten tanpa cek unit; parser
+  memperlakukannya sebagai advisory (numeric dibiarkan nil untuk nilai non-integer).
+
+Kesimpulan: format XBRL cukup seragam (generator tunggal Fujitsu XWand), parser stdlib generalize dengan
+baik. Yang perlu perhatian bukan struktur, melainkan pemetaan konsep per industri + skala EPS.
 
 ## 4. Rekomendasi Arsitektur Fetcher (Phase 2)
 
