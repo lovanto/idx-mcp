@@ -133,6 +133,10 @@ type marketIndexOutput struct {
 
 type marketSummaryInput struct{}
 
+// ---- Tool: get_sector_summary ----
+
+type sectorSummaryInput struct{}
+
 // ---- Tool: get_broker_summary ----
 
 type brokerSummaryInput struct{}
@@ -245,6 +249,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 		sum, err := client.MarketSummary(ctx)
 		if err != nil {
 			return toolError(err), idx.MarketSummary{}, nil
+		}
+		return nil, *sum, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_sector_summary",
+		Description: "Per-sector market roll-up for the latest IDX trading day: for each sector, how many of its stocks traded, market breadth (advancing/declining/unchanged), total traded value, and net foreign flow, sorted by traded value. Built by joining the company directory with the daily stock feed.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ sectorSummaryInput) (*mcp.CallToolResult, idx.SectorSummary, error) {
+		sum, err := client.SectorSummary(ctx)
+		if err != nil {
+			return toolError(err), idx.SectorSummary{}, nil
 		}
 		return nil, *sum, nil
 	})
