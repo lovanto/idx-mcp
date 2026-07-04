@@ -129,6 +129,10 @@ type marketIndexOutput struct {
 	Indices []idx.MarketIndex `json:"indices"`
 }
 
+// ---- Tool: get_market_summary ----
+
+type marketSummaryInput struct{}
+
 // ---- Tool: get_financial_report ----
 
 type financialInput struct {
@@ -217,6 +221,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), marketIndexOutput{}, nil
 		}
 		return nil, marketIndexOutput{Indices: idxs}, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_market_summary",
+		Description: "Exchange-wide summary for the latest IDX trading day: market breadth (advancing/declining/unchanged), total volume/value/frequency, official net foreign flow, and the day's top gainers and losers.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ marketSummaryInput) (*mcp.CallToolResult, idx.MarketSummary, error) {
+		sum, err := client.MarketSummary(ctx)
+		if err != nil {
+			return toolError(err), idx.MarketSummary{}, nil
+		}
+		return nil, *sum, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
