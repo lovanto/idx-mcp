@@ -19,6 +19,7 @@ SQLite cache.
 |---|---|---|
 | `get_trading_info` | `code` (e.g. `BBCA`), `length` (1–365, default 30) | Daily OHLCV + official foreign buy/sell/net, most recent first |
 | `get_company_profile` | `code` | Listing/sector metadata + recent dividends |
+| `get_dividends` | `code` | Most recently declared dividend(s): cash per share, cum/ex/record/payment dates, bonus-share ratio |
 | `get_financial_report` | `code`, `year` (e.g. `2026`), `period` (`tw1`/`tw2`/`tw3`/`audit`, default `tw1`) | Key accounts (assets, liabilities, equity, revenue, profit, …) parsed from the official XBRL filing |
 
 Concept coverage is validated across sectors (bank, infrastructure, general conglomerate). Non-

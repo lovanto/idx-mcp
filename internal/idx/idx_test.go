@@ -35,7 +35,7 @@ const tradingJSON = `{"KodeEmiten":"BBCA","replies":[
 const profileJSON = `{"Profiles":[
  {"KodeEmiten":"BBCA","NamaEmiten":"PT Bank Central Asia Tbk.","Alamat":"Menara BCA","Sektor":"Financials","SubSektor":"Banks","Industri":"Banks","SubIndustri":"Banks","PapanPencatatan":"Main","TanggalPencatatan":"2000-05-31T00:00:00","Website":"www.bca.co.id","Email":"ir@bca.co.id","Telepon":"021-23588000","KegiatanUsahaUtama":"Banking"}
 ],"Dividen":[
- {"Jenis":"dti","TahunBuku":"2026","CashDividenPerSaham":20,"CashDividenPerSahamMU":"IDR","TanggalExRegulerDanNegosiasi":"2026-06-17T00:00:00","TanggalPembayaran":"2026-06-26T00:00:00"}
+ {"Jenis":"dti","TahunBuku":"2026","CashDividenPerSaham":20,"CashDividenPerSahamMU":"IDR","CashDividenTotal":0,"TotalSahamBonus":0,"Rasio1":0,"Rasio2":0,"TanggalCum":"2026-06-15T00:00:00","TanggalExRegulerDanNegosiasi":"2026-06-17T00:00:00","TanggalDPS":"2026-06-18T16:00:00","TanggalPembayaran":"2026-06-26T00:00:00"}
 ]}`
 
 func TestTradingInfo(t *testing.T) {
@@ -76,11 +76,35 @@ func TestCompanyProfile(t *testing.T) {
 	if p.ListingDate != "2000-05-31" {
 		t.Errorf("ListingDate = %q, want 2000-05-31", p.ListingDate)
 	}
-	if len(p.Dividends) != 1 || p.Dividends[0].CashPer != 20 || p.Dividends[0].Currency != "IDR" {
+	if len(p.Dividends) != 1 || p.Dividends[0].CashPerShare != 20 || p.Dividends[0].Currency != "IDR" {
 		t.Errorf("dividends = %+v", p.Dividends)
 	}
 	if p.Dividends[0].ExDate != "2026-06-17" {
 		t.Errorf("ex date = %q", p.Dividends[0].ExDate)
+	}
+}
+
+func TestDividends(t *testing.T) {
+	f := &fakeFetcher{responses: map[string]string{"GetCompanyProfilesDetail": profileJSON}}
+	c := New(f, nil)
+
+	divs, err := c.Dividends(context.Background(), "BBCA")
+	if err != nil {
+		t.Fatalf("Dividends: %v", err)
+	}
+	if len(divs) != 1 {
+		t.Fatalf("got %d dividends, want 1", len(divs))
+	}
+	d := divs[0]
+	if d.BookYear != "2026" || d.Type != "dti" || d.CashPerShare != 20 {
+		t.Errorf("dividend = %+v", d)
+	}
+	if d.CumDate != "2026-06-15" || d.RecordDate != "2026-06-18" || d.PayDate != "2026-06-26" {
+		t.Errorf("dividend dates = cum %q record %q pay %q", d.CumDate, d.RecordDate, d.PayDate)
+	}
+	// Rasio1/Rasio2 are both 0 in the fixture, so Ratio stays empty.
+	if d.Ratio != "" {
+		t.Errorf("Ratio = %q, want empty for a pure cash dividend", d.Ratio)
 	}
 }
 
