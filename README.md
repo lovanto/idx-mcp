@@ -25,6 +25,7 @@ SQLite cache.
 | `get_management` | `code` | Board: directors (with affiliation flag) and commissioners (with independence flag), plus positions |
 | `get_market_index` | `code` (optional, e.g. `COMPOSITE`, `LQ45`) | Latest EOD index summary: OHLC-style values, change, change %, volume, value, market cap. Omit `code` for all ~45 indices |
 | `get_market_summary` | _(none)_ | Exchange-wide roll-up for the latest trading day: market breadth (advancing/declining/unchanged), total volume/value/frequency, net foreign flow, and top gainers/losers |
+| `get_sector_summary` | _(none)_ | Per-sector roll-up of the latest trading day: for each of the ~11 IDX sectors, stocks traded, market breadth (advancing/declining/unchanged), total value, and net foreign flow; sorted by value |
 | `get_broker_summary` | _(none)_ | Per-broker trading activity for the latest day (all ~88 brokers): firm code, name, volume, value, frequency; sorted by traded value |
 | `list_companies` | `query` (optional, matches code/name), `sector` (optional) | IDX listed-company directory (~957) for ticker discovery: code, name, listing board/date, sector, industry. Capped at 100 results (`truncated` flag when more matched) |
 | `get_financial_report` | `code`, `year` (e.g. `2026`), `period` (`tw1`/`tw2`/`tw3`/`audit`, default `tw1`) | Key accounts (assets, liabilities, equity, revenue, profit, …) parsed from the official XBRL filing |
