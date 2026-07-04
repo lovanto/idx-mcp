@@ -1,6 +1,6 @@
 # idx-mcp
 
-[![CI](https://github.com/lovanto/bursa-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/lovanto/bursa-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/lovanto/idx-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/lovanto/idx-mcp/actions/workflows/ci.yml)
 
 An [MCP](https://modelcontextprotocol.io) server that exposes **official Bursa Efek Indonesia
 (idx.co.id)** market data to AI assistants — daily prices with official foreign flow, company
