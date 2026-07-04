@@ -178,6 +178,17 @@ type financialInput struct {
 	Period string `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
 }
 
+// ---- Tool: screen_stocks ----
+
+type screenerInput struct {
+	RankBy   string  `json:"rank_by,omitempty" jsonschema:"ranking: top_gainers, top_losers, most_active_value, most_active_volume, top_foreign_buy, or top_foreign_sell (default most_active_value)"`
+	Sector   string  `json:"sector,omitempty" jsonschema:"optional sector substring filter, e.g. Energi or Keuangan"`
+	MinValue float64 `json:"min_value,omitempty" jsonschema:"minimum traded value in IDR (filters out illiquid stocks)"`
+	MinPrice float64 `json:"min_price,omitempty" jsonschema:"minimum closing price in IDR"`
+	MaxPrice float64 `json:"max_price,omitempty" jsonschema:"maximum closing price in IDR"`
+	Limit    int     `json:"limit,omitempty" jsonschema:"maximum rows to return (default 20, max 100)"`
+}
+
 // ---- Tool: get_financial_growth ----
 
 type growthInput struct {
@@ -336,6 +347,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.FinancialReport{}, nil
 		}
 		return nil, *rep, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "screen_stocks",
+		Description: "Screen the latest IDX trading day across all ~950 stocks: rank by gainers/losers, traded value/volume, or net foreign buy/sell, with optional sector, price-band, and minimum-liquidity filters. Price/flow data only (no fundamental screening).",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in screenerInput) (*mcp.CallToolResult, idx.ScreenerResult, error) {
+		res, err := client.ScreenStocks(ctx, in.RankBy, in.Sector, in.MinValue, in.MinPrice, in.MaxPrice, in.Limit)
+		if err != nil {
+			return toolError(err), idx.ScreenerResult{}, nil
+		}
+		return nil, *res, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
