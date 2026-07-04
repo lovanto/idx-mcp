@@ -23,6 +23,7 @@ SQLite cache.
 | `get_shareholders` | `code` | Ownership structure: each holder's name, category, share count, percentage, and controlling-shareholder flag (largest first) |
 | `get_subsidiaries` | `code` | Consolidated subsidiaries: name, line of business, location, ownership %, total assets, operation status (largest first) |
 | `get_management` | `code` | Board: directors (with affiliation flag) and commissioners (with independence flag), plus positions |
+| `get_market_index` | `code` (optional, e.g. `COMPOSITE`, `LQ45`) | Latest EOD index summary: OHLC-style values, change, change %, volume, value, market cap. Omit `code` for all ~45 indices |
 | `get_financial_report` | `code`, `year` (e.g. `2026`), `period` (`tw1`/`tw2`/`tw3`/`audit`, default `tw1`) | Key accounts (assets, liabilities, equity, revenue, profit, …) parsed from the official XBRL filing |
 
 Concept coverage is validated across sectors (bank, infrastructure, general conglomerate). Non-

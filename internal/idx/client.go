@@ -26,6 +26,7 @@ const baseURL = "https://www.idx.co.id"
 const (
 	ttlTrading = 6 * time.Hour
 	ttlProfile = 30 * 24 * time.Hour
+	ttlIndex   = 6 * time.Hour
 	ttlFinList = 24 * time.Hour
 	ttlFinData = 0 // immutable
 )

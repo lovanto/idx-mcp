@@ -119,6 +119,16 @@ type managementInput struct {
 	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
 }
 
+// ---- Tool: get_market_index ----
+
+type marketIndexInput struct {
+	Code string `json:"code,omitempty" jsonschema:"index code to filter by, e.g. COMPOSITE (IHSG), LQ45, IDX30; omit for all indices"`
+}
+
+type marketIndexOutput struct {
+	Indices []idx.MarketIndex `json:"indices"`
+}
+
 // ---- Tool: get_financial_report ----
 
 type financialInput struct {
@@ -196,6 +206,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.Management{}, nil
 		}
 		return nil, *m, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_market_index",
+		Description: "Latest end-of-day summary for IDX market indices (COMPOSITE/IHSG, LQ45, IDX30, and ~45 others): OHLC-style values, change, change %, volume, value, and market cap. Pass a code to filter, or omit for all.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in marketIndexInput) (*mcp.CallToolResult, marketIndexOutput, error) {
+		idxs, err := client.MarketIndices(ctx, in.Code)
+		if err != nil {
+			return toolError(err), marketIndexOutput{}, nil
+		}
+		return nil, marketIndexOutput{Indices: idxs}, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
