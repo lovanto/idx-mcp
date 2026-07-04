@@ -133,6 +133,14 @@ type marketIndexOutput struct {
 
 type marketSummaryInput struct{}
 
+// ---- Tool: get_broker_summary ----
+
+type brokerSummaryInput struct{}
+
+type brokerSummaryOutput struct {
+	Brokers []idx.BrokerActivity `json:"brokers"`
+}
+
 // ---- Tool: get_financial_report ----
 
 type financialInput struct {
@@ -232,6 +240,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.MarketSummary{}, nil
 		}
 		return nil, *sum, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_broker_summary",
+		Description: "Per-broker trading activity for the latest IDX trading day (all ~88 brokers): firm code, name, volume, value, and frequency, sorted by traded value (most active first).",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ brokerSummaryInput) (*mcp.CallToolResult, brokerSummaryOutput, error) {
+		brokers, err := client.BrokerSummary(ctx)
+		if err != nil {
+			return toolError(err), brokerSummaryOutput{}, nil
+		}
+		return nil, brokerSummaryOutput{Brokers: brokers}, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{

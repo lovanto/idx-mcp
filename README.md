@@ -25,6 +25,7 @@ SQLite cache.
 | `get_management` | `code` | Board: directors (with affiliation flag) and commissioners (with independence flag), plus positions |
 | `get_market_index` | `code` (optional, e.g. `COMPOSITE`, `LQ45`) | Latest EOD index summary: OHLC-style values, change, change %, volume, value, market cap. Omit `code` for all ~45 indices |
 | `get_market_summary` | _(none)_ | Exchange-wide roll-up for the latest trading day: market breadth (advancing/declining/unchanged), total volume/value/frequency, net foreign flow, and top gainers/losers |
+| `get_broker_summary` | _(none)_ | Per-broker trading activity for the latest day (all ~88 brokers): firm code, name, volume, value, frequency; sorted by traded value |
 | `get_financial_report` | `code`, `year` (e.g. `2026`), `period` (`tw1`/`tw2`/`tw3`/`audit`, default `tw1`) | Key accounts (assets, liabilities, equity, revenue, profit, …) parsed from the official XBRL filing |
 
 Concept coverage is validated across sectors (bank, infrastructure, general conglomerate). Non-
