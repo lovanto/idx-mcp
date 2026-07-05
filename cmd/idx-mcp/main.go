@@ -227,6 +227,14 @@ type issuedInput struct {
 	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
 }
 
+// ---- Tool: compare_stocks ----
+
+type compareInput struct {
+	Codes  []string `json:"codes" jsonschema:"2-5 emiten tickers to compare, e.g. [\"BBCA\",\"BBRI\",\"BMRI\"]"`
+	Year   string   `json:"year" jsonschema:"financial report year to value against, e.g. 2026"`
+	Period string   `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
+}
+
 // ---- Tool: get_dividend_history ----
 
 type divHistoryInput struct {
@@ -424,6 +432,17 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.ValuationRatios{}, nil
 		}
 		return nil, *v, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "compare_stocks",
+		Description: "Side-by-side valuation of 2-5 IDX-listed companies against the same report year/period: price, market cap, PER, PBV, ROE, annualized EPS, book value per share, and dividend yield. A ticker without data degrades to an error row. Uncached tickers each cost several rate-limited fetches, so a cold comparison can take minutes.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in compareInput) (*mcp.CallToolResult, idx.StockComparison, error) {
+		cmp, err := client.CompareStocks(ctx, in.Codes, in.Year, in.Period)
+		if err != nil {
+			return toolError(err), idx.StockComparison{}, nil
+		}
+		return nil, *cmp, nil
 	})
 
 	mcp.AddTool(s, &mcp.Tool{
