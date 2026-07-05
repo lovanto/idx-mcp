@@ -221,6 +221,33 @@ type valuationInput struct {
 	Period string `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
 }
 
+// ---- Tool: get_issued_history ----
+
+type issuedInput struct {
+	Code string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+}
+
+// ---- Tool: get_index_constituents ----
+
+type constituentsInput struct {
+	Index string `json:"index" jsonschema:"index code, e.g. LQ45, IDX30, IDX80, KOMPAS100, BISNIS-27, MNC36, SMINFRA18, IDXESGL"`
+}
+
+// ---- Tool: compare_stocks ----
+
+type compareInput struct {
+	Codes  []string `json:"codes" jsonschema:"2-5 emiten tickers to compare, e.g. [\"BBCA\",\"BBRI\",\"BMRI\"]"`
+	Year   string   `json:"year" jsonschema:"financial report year to value against, e.g. 2026"`
+	Period string   `json:"period,omitempty" jsonschema:"reporting period: tw1, tw2, tw3, or audit (default tw1)"`
+}
+
+// ---- Tool: get_dividend_history ----
+
+type divHistoryInput struct {
+	Code  string `json:"code" jsonschema:"emiten ticker, e.g. BBCA"`
+	Years int    `json:"years,omitempty" jsonschema:"look-back window in years (1-5, default 3)"`
+}
+
 func registerTools(s *mcp.Server, client *idx.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_trading_info",
@@ -411,6 +438,50 @@ func registerTools(s *mcp.Server, client *idx.Client) {
 			return toolError(err), idx.ValuationRatios{}, nil
 		}
 		return nil, *v, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_index_constituents",
+		Description: "Current members of an IDX stock index (LQ45, IDX30, IDX80, KOMPAS100, …) from the latest official evaluation announcement: ticker, free-float ratio, index shares, capped weight, and whether the member is new/kept/adjusted. Parsed from the announcement's attached workbook.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in constituentsInput) (*mcp.CallToolResult, idx.IndexConstituents, error) {
+		ic, err := client.IndexConstituents(ctx, in.Index)
+		if err != nil {
+			return toolError(err), idx.IndexConstituents{}, nil
+		}
+		return nil, *ic, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "compare_stocks",
+		Description: "Side-by-side valuation of 2-5 IDX-listed companies against the same report year/period: price, market cap, PER, PBV, ROE, annualized EPS, book value per share, and dividend yield. A ticker without data degrades to an error row. Uncached tickers each cost several rate-limited fetches, so a cold comparison can take minutes.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in compareInput) (*mcp.CallToolResult, idx.StockComparison, error) {
+		cmp, err := client.CompareStocks(ctx, in.Codes, in.Year, in.Period)
+		if err != nil {
+			return toolError(err), idx.StockComparison{}, nil
+		}
+		return nil, *cmp, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_dividend_history",
+		Description: "Multi-year timeline of dividend-related official disclosures for an IDX-listed company, newest first: schedule announcements (cum/ex/payment dates) with PDF attachment links. Amounts live in the PDFs; use get_dividends for the latest structured declaration.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in divHistoryInput) (*mcp.CallToolResult, idx.DividendHistory, error) {
+		h, err := client.DividendHistory(ctx, in.Code, in.Years)
+		if err != nil {
+			return toolError(err), idx.DividendHistory{}, nil
+		}
+		return nil, *h, nil
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_issued_history",
+		Description: "Corporate actions that changed an IDX-listed company's issued share count (stock splits, rights issues, partial delistings, …), oldest first — useful for spotting dilution or float changes behind a price history.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in issuedInput) (*mcp.CallToolResult, idx.IssuedHistory, error) {
+		h, err := client.IssuedHistory(ctx, in.Code)
+		if err != nil {
+			return toolError(err), idx.IssuedHistory{}, nil
+		}
+		return nil, *h, nil
 	})
 }
 

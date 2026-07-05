@@ -36,6 +36,10 @@ SQLite cache.
 | `get_foreign_flow_trend` | `code`, `days` (default 60) | Foreign accumulation/distribution: net flow (shares + approx IDR), foreign share of volume, and price change over 5/20/60-day windows, plus the current net-buy/net-sell streak |
 | `screen_stocks` | `rank_by` (gainers/losers/value/volume/foreign buy/sell), `sector`, `min_value`, `min_price`, `max_price`, `limit` | Screen all ~950 stocks on the latest trading day, with listing board and special-notation flags per stock |
 | `get_announcements` | `code`, `keyword` (optional, e.g. `dividen`), `days` (default 30), `limit` | Official IDX disclosures (keterbukaan informasi), newest first, with PDF attachment links — where dividend schedules, RUPS calls, and corporate actions are announced |
+| `get_dividend_history` | `code`, `years` (1–5, default 3) | Multi-year timeline of dividend-related disclosures, newest first, with PDF links (amounts live in the PDFs; `get_dividends` has the latest structured declaration) |
+| `get_issued_history` | `code` | Corporate actions that changed the issued share count (stock splits, rights issues, partial delistings), oldest first — for spotting dilution/float changes |
+| `get_index_constituents` | `index` (e.g. `LQ45`, `IDX30`, `IDX80`, `KOMPAS100`) | Current index members from the latest official evaluation announcement: ticker, free-float ratio, index shares, capped weight, and new/kept/adjusted tag |
+| `compare_stocks` | `codes` (2–5 tickers), `year`, `period` | Side-by-side valuation against the same filing period: price, market cap, PER, PBV, ROE, annualized EPS, BVPS, dividend yield (per-ticker errors degrade to error rows) |
 
 Concept coverage is validated across sectors (bank, infrastructure, general conglomerate). Non-
 financial issuers report `SalesAndRevenue`; banks report `InterestIncome`. Earnings-per-share is a
